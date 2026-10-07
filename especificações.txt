@@ -1,0 +1,27 @@
+Quero que crie um site para gestão de erros, o objetivo é que um usuário solicite permissão da alteração dos dados em uma tabela, usando o node quero uma conexão em tempo real no banco, mantendo apenas uma conexão em aberto na seguinte consulta "SELECT a.table_name_schema as schema, a.table_name, t.* 
+FROM rotina.tarefas_pendentes as t
+INNER JOIN sustentacao.automacao_new AS a ON a.id = t.id_automacao"
+
+
+A estrutura do site deve ser a seguinte, deve conter primeiramente a tela de login, após o login deve ter a home onde terá as seguintes telas:
+* Dashboard - Deve ter 3 cards no topo, 
+    - Total de automações (pode ser feito um count na tabela sustentacao.automacao_new em que o id_situacao seja 4 ou 5)
+    - Total de rotinas processadas no dia de hoje (Pode ser um count na tabela sustentacao.tarefa_new pela coluna rotinas onde a data executar_apos seja a data atual)
+    - Total de erros (NEsse caso será contabilizado conforme as solicitações de alteração das rotinas com erro)
+* Rotinas - Deve ter todas as rotinas conforme a SQL informada anteriormente de tarefas_pendentes, nesse item de menu deve conter uma tabela com as colunas principais, id_situacao (O id deve ter relação com a descricao na tabela sustentacao.situacao_rotina), id_agencia (O id deve ter relação com o nome na tabela dw.agencia_new), id_robo (O id deve ter relação com o nome na tabela sustentacao.robo_new), id_tarefa, primeira_tentativa, tentativas, inicio, fim, executar_apos, processo_num, etapa_execucao, obs. (Para visualizar todas as colunas, deve ter um botão de detalhes onde listará todas as colunas e valores contidos naquela linha)
+    - Para centralizar as rotinas em uma tabela só, deve ser feito a seguinte lógica, no SQL apresentado anteriormente da tarefas_pendentes, deve verificar as linhas resultantes dessa busca onde terá o schema e a tabela, com isso poderá consulta nas tabelas trazendo os dados com as colunas padrões apresentadas anteriormente.
+    - Os itens deve ser apresentados paginados por 10 registros por pagina
+    - Deve-se ter campos de filtro para a automação (projeto_nome conforme a coluna da tabela sustentacao.automacao_new), filtro pelo status (deve ser fixado o filtro pelos status de Pendente, Processando e Erro, porém deve ter as opções de status conforme a tabela sustentacao.situacao_rotina). E também os itens podem ser ordenados pelo id_situacao, e executar_apos
+    - Para que o usuário solicite alterações nessa linha, deve-se ter a opção que após o usuário alterar qualquer dado daquela linha, apareça um botão de enviar para aprovação, onde será enviado a solicitação para o usuário aprovador. Obs: Lembrando que o usuário pode fazer alterações em várias linhas e enviar a solicitação de várias linhas ou de apenas uma para alterar os registros.
+* Automações - Deve-se ter as colunas da tabela sustentacao.automacao_new, onde caso tenha alteração deve-se seguir o mesmo esquema das rotinas, solicitar alteração e enviar para aprovação
+* Robos -  Deve-se ter as colunas da tabela sustentacao.robo_new, onde caso tenha alteração deve-se seguir o mesmo esquema das rotinas, solicitar alteração e enviar para aprovação
+* Solicitações - Se deve conter todas as solicitações enviadas por aquele usuário, referente a qual automação foi solicitado alteração, qual ID da rotina, quais os dados alterados e o status da solicitação (Pendente, Aprovado, Recusado)
+* Usuários - Criação de novos usuários (Login, senha, perfil do usuário), o mesmo serve para alterar a senha caso precise.
+* COnfigurações - COnfigurações do usuário logado (Nome, senha...)
+
+Regras de ouro:
+    - O sistema deve conter 2 tipos de perfils, os usuário aprovadores e usuário de visualização. Onde pode ser atribuido ou removido dos usuários, porém apenas quem é aprovador pode fazer isso
+    - Menu de Solicitações somente usuários aprovadores podem ter acesso (Para os que não são, nem deve aparecer esse item). O mesmo vale para o item Usuários.
+    - Para as tabelas de solictações, usuário e demais que necessite ser criada, devem ser criadas em um schema chamado gestao_rpa
+
+Analise o banco de dados agis com o usuário e senha "rpa" no server localhost
