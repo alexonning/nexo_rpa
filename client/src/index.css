@@ -14,5 +14,5 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; min-height: 100vh; }
-button, input, select { font: inherit; }
+button, input, select, summary { font: inherit; }
 button { color: inherit; }

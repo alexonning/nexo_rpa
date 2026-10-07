@@ -89,9 +89,9 @@
 .multi-select-filter { position: relative; flex: 0 0 auto; }
 .data-panel:has(.multi-select-filter) { overflow: visible; }
 .filters-row:has(.multi-select-filter) { position: relative; z-index: 6; }
-.multi-select-filter > summary { max-width: 220px; min-width: 155px; justify-content: flex-start; list-style: none; cursor: pointer; }
+.multi-select-filter > summary { max-width: 220px; min-width: 155px; justify-content: flex-start; list-style: none; cursor: pointer; font-size: 10px; font-weight: 400; line-height: 1.2; color: #667168; }
 .multi-select-filter > summary::-webkit-details-marker { display: none; }
-.multi-select-filter > summary span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.multi-select-filter > summary span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: inherit; }
 .multi-select-menu { position: absolute; z-index: 15; top: calc(100% + 5px); left: 0; width: 245px; max-height: 310px; overflow-y: auto; padding: 6px; border: 1px solid #dfe6df; border-radius: 5px; background: #fff; box-shadow: 0 10px 28px #213a281f; }
 .multi-select-all { width: 100%; padding: 8px 9px; border: 0; border-bottom: 1px solid #edf0ed; background: #fff; color: #176b4c; font-size: 10px; font-weight: 600; text-align: left; cursor: pointer; }
 .multi-select-option { min-height: 31px; display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 3px; color: #536057; font-size: 10px; font-weight: 400; cursor: pointer; }
@@ -104,6 +104,10 @@ table { width: 100%; border-collapse: collapse; text-align: left; white-space: n
 th { height: 34px; padding: 0 10px; border-top: 1px solid #eff1ef; border-bottom: 1px solid #eff1ef; color: #89938b; background: #fafbfa; font-size: 8px; font-weight: 700; letter-spacing: .55px; }
 th:first-child, td:first-child { padding-left: 17px; width: 34px; }
 th svg { vertical-align: -2px; margin-left: 3px; color: #9ba39c; }
+.sort-header { display: inline-flex; align-items: center; gap: 4px; height: 34px; padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; cursor: pointer; }
+.sort-header:hover { color: #4f5c53; }
+.sort-header.active { color: #176a4b; }
+.sort-header svg { margin: 0; color: currentColor; }
 td { height: 53px; padding: 6px 10px; border-bottom: 1px solid #f0f2f0; color: #606b62; font-size: 9px; }
 tbody tr:last-child td { border-bottom: 0; }
 tbody tr:hover td { background: #fbfcfb; }

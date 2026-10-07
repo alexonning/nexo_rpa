@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { FormEvent, MouseEvent } from 'react'
-import { Activity, AlertTriangle, ArrowDownUp, ArrowLeft, ArrowRight, Bell, Bot, Check, ChevronDown, CircleHelp, Clock3, Database, FileClock, Filter, Gauge, KeyRound, ListChecks, LogOut, MoreHorizontal, Pencil, Plus, Search, Settings2, ShieldCheck, SlidersHorizontal, Users, X } from 'lucide-react'
+import type { FormEvent, MouseEvent, ToggleEvent } from 'react'
+import { Activity, AlertTriangle, ArrowDownUp, ArrowLeft, ArrowRight, Bell, Bot, Check, ChevronDown, ChevronUp, CircleHelp, Clock3, Database, FileClock, Filter, Gauge, KeyRound, ListChecks, LogOut, MoreHorizontal, Pencil, Plus, Search, Settings2, ShieldCheck, SlidersHorizontal, Users, X } from 'lucide-react'
 import { apiRequest } from './api'
 import type { ChangeRequest, ColumnMetadata, Profile, Routine, Section } from './types'
 import './App.css'
@@ -18,6 +18,7 @@ type DashboardData = { automacoes_ativas: string; rotinas_hoje: string; erros_co
 type RequestRow = { grupo_id: string; estado: ChangeRequest['status']; solicitante: string; automacao: string | null; criado_em: string; quantidade: number; itens: Array<{ tipo: string; automacao_id: string; automacao: string | null; rotina_id: string; schema: string; tabela: string; chave_registro: Record<string, unknown>; valores_anteriores: Record<string, unknown>; valores_propostos: Record<string, unknown> }> }
 type PageResult<T> = { items: T[]; page: number; pageSize: number; total: number }
 type RoutineDraft = { routine: Routine; changes: Record<string, unknown> }
+type RoutineSort = 'routine_id' | 'automation' | 'status' | 'agency' | 'robot' | 'tentativas' | 'executar_apos' | 'etapa_execucao'
 
 const sections: { label: Section; icon: typeof Gauge }[] = [
   { label: 'Dashboard', icon: Gauge }, { label: 'Rotinas', icon: ListChecks },
@@ -120,7 +121,8 @@ export default function LiveWorkspace() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string[] | null>(['Erro'])
   const [automationFilter, setAutomationFilter] = useState<string[] | null>(null)
-  const [sort, setSort] = useState<'id_situacao' | 'executar_apos'>('executar_apos')
+  const [sort, setSort] = useState<RoutineSort>('executar_apos')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [requestStatus, setRequestStatus] = useState('Pendente')
   const [routineStatuses, setRoutineStatuses] = useState<Array<{ id: number; descricao: string }>>([])
   const [automationProjects, setAutomationProjects] = useState<string[]>([])
@@ -190,7 +192,7 @@ export default function LiveWorkspace() {
           setDashboard(metrics); setRecentRoutines(recent.items.map(mapRoutine)); setErrorRoutines(errors.items.map(mapRoutine)); setErrorRoutineTotal(errors.total)
         }
         if (section === 'Rotinas') {
-          const query = new URLSearchParams({ page: String(page), sort, direction: 'desc' })
+          const query = new URLSearchParams({ page: String(page), sort, direction: sortDirection })
           if (search) query.set('search', search)
           appendMultiFilter(query, 'status', statusFilter)
           appendMultiFilter(query, 'automation', automationFilter)
@@ -216,7 +218,7 @@ export default function LiveWorkspace() {
     void load()
     const timer = window.setInterval(() => setRefreshTick((value) => value + 1), 15000)
     return () => { active = false; window.clearInterval(timer) }
-  }, [user, section, page, search, statusFilter, automationFilter, sort, requestStatus, entitySearch, refreshTick])
+  }, [user, section, page, search, statusFilter, automationFilter, sort, sortDirection, requestStatus, entitySearch, refreshTick])
 
   useEffect(() => {
     if (!user) return
@@ -229,6 +231,11 @@ export default function LiveWorkspace() {
   const initials = user?.nome.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() ?? ''
 
   function notify(message: string) { setNotice(message); window.setTimeout(() => setNotice(''), 3200) }
+  function sortRoutinesBy(column: RoutineSort) {
+    setPage(1)
+    if (sort === column) setSortDirection((value) => value === 'asc' ? 'desc' : 'asc')
+    else { setSort(column); setSortDirection('desc') }
+  }
   function navigate(next: Section) { setSection(next); setPage(1); setSelected([]); setEntitySearch('') }
   function openRoutineFromDashboard(routine: Routine) {
     setSearch(`${routine.table}/${routine.recordId}`)
@@ -337,8 +344,8 @@ export default function LiveWorkspace() {
         {section === 'Rotinas' && <>
           <Heading eyebrow="MONITORAMENTO" title="Rotinas" description="Acompanhe a execução e trate ocorrências das automações." actions={<>{selected.some((id) => drafts[id]) && <button className="primary-button" onClick={() => void sendForApproval()}>Enviar {selected.filter((id) => drafts[id]).length} para aprovação <ArrowRight size={15} /></button>}<button className="secondary-button" onClick={() => setRefreshTick((value) => value + 1)}><ArrowDownUp size={15} /> Atualizar</button></>} />
           <section className="data-panel"><div className="panel-title-row"><div><h2>Fila de execução</h2><span className="panel-meta">{routineTotal} registros · atualização automática</span></div><button className="icon-button" title="Mais opções"><MoreHorizontal size={19} /></button></div>
-            <div className="filters-row"><label className="search-field"><Search size={16} /><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} placeholder="Buscar rotina, tarefa ou automação" /></label><MultiSelectFilter icon={<Filter size={15} />} label="Automações" allLabel="Todas as automações" options={automationProjects} selected={automationFilter} onChange={(values) => { setAutomationFilter(values); setPage(1) }} /><MultiSelectFilter icon={<SlidersHorizontal size={15} />} label="Status" allLabel="Todos os status" options={routineStatuses.map((item) => item.descricao)} selected={statusFilter} onChange={(values) => { setStatusFilter(values); setPage(1) }} /><label className="select-filter"><ArrowDownUp size={15} /><select value={sort} onChange={(event) => { setSort(event.target.value as 'id_situacao' | 'executar_apos'); setPage(1) }}><option value="executar_apos">Ordenar por execução</option><option value="id_situacao">Ordenar por status</option></select></label></div>
-            <div className="table-scroll"><table><thead><tr><th><input type="checkbox" aria-label="Selecionar rascunhos da página" checked={routines.some((row) => drafts[row.id]) && routines.filter((row) => drafts[row.id]).every((row) => selected.includes(row.id))} onChange={(event) => setSelected((current) => event.target.checked ? [...new Set([...current, ...routines.filter((row) => drafts[row.id]).map((row) => row.id)])] : current.filter((id) => !routines.some((row) => row.id === id)))} /></th><th>ROTINA <ArrowDownUp size={12} /></th><th>AUTOMAÇÃO</th><th>STATUS</th><th>AGÊNCIA</th><th>ROBÔ</th><th>TENTATIVAS</th><th>EXECUTAR APÓS</th><th>ETAPA</th><th /></tr></thead><tbody>{routines.map((row) => <tr key={row.id}><td><input type="checkbox" aria-label={`Selecionar ${row.id}`} checked={selected.includes(row.id)} onChange={() => setSelected((items) => items.includes(row.id) ? items.filter((id) => id !== row.id) : drafts[row.id] ? [...items, row.id] : items)} /></td><td><button className="routine-id" onClick={() => openRoutine(row)}>{row.id}</button><small className="sub-cell">Tarefa {row.taskId}</small></td><td className="strong-cell">{row.automation}</td><td><Status value={row.status} /></td><td>{row.agency}</td><td>{row.robot}</td><td className={row.attempt === row.attempts && row.attempts > 0 ? 'attempt-alert' : ''}>{row.attempt} de {row.attempts}</td><td>{row.scheduled}</td><td className="stage-cell">{row.stage}</td><td><button className="icon-button" title="Detalhes" onClick={() => openRoutine(row)}><MoreHorizontal size={17} /></button></td></tr>)}</tbody></table>{routines.length === 0 && <div className="empty-state">Nenhuma rotina encontrada com esses filtros.</div>}</div>
+            <div className="filters-row"><label className="search-field"><Search size={16} /><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} placeholder="Buscar rotina, tarefa ou automação" /></label><MultiSelectFilter icon={<Filter size={15} />} label="Automações" allLabel="Todas as automações" options={automationProjects} selected={automationFilter} onChange={(values) => { setAutomationFilter(values); setPage(1) }} /><MultiSelectFilter icon={<SlidersHorizontal size={15} />} label="Status" allLabel="Todos os status" options={routineStatuses.map((item) => item.descricao)} selected={statusFilter} onChange={(values) => { setStatusFilter(values); setPage(1) }} /></div>
+            <div className="table-scroll"><table><thead><tr><th><input type="checkbox" aria-label="Selecionar rascunhos da página" checked={routines.some((row) => drafts[row.id]) && routines.filter((row) => drafts[row.id]).every((row) => selected.includes(row.id))} onChange={(event) => setSelected((current) => event.target.checked ? [...new Set([...current, ...routines.filter((row) => drafts[row.id]).map((row) => row.id)])] : current.filter((id) => !routines.some((row) => row.id === id)))} /></th><SortHeader label="ROTINA" column="routine_id" sort={sort} direction={sortDirection} onSort={sortRoutinesBy} /><SortHeader label="AUTOMAÇÃO" column="automation" sort={sort} direction={sortDirection} onSort={sortRoutinesBy} /><SortHeader label="STATUS" column="status" sort={sort} direction={sortDirection} onSort={sortRoutinesBy} /><SortHeader label="AGÊNCIA" column="agency" sort={sort} direction={sortDirection} onSort={sortRoutinesBy} /><SortHeader label="ROBÔ" column="robot" sort={sort} direction={sortDirection} onSort={sortRoutinesBy} /><SortHeader label="TENTATIVAS" column="tentativas" sort={sort} direction={sortDirection} onSort={sortRoutinesBy} /><SortHeader label="EXECUTAR APÓS" column="executar_apos" sort={sort} direction={sortDirection} onSort={sortRoutinesBy} /><SortHeader label="ETAPA" column="etapa_execucao" sort={sort} direction={sortDirection} onSort={sortRoutinesBy} /><th /></tr></thead><tbody>{routines.map((row) => <tr key={row.id}><td><input type="checkbox" aria-label={`Selecionar ${row.id}`} checked={selected.includes(row.id)} onChange={() => setSelected((items) => items.includes(row.id) ? items.filter((id) => id !== row.id) : drafts[row.id] ? [...items, row.id] : items)} /></td><td><button className="routine-id" onClick={() => openRoutine(row)}>{row.id}</button><small className="sub-cell">Tarefa {row.taskId}</small></td><td className="strong-cell">{row.automation}</td><td><Status value={row.status} /></td><td>{row.agency}</td><td>{row.robot}</td><td>{row.attempts}</td><td>{row.scheduled}</td><td className="stage-cell">{row.stage}</td><td><button className="icon-button" title="Detalhes" onClick={() => openRoutine(row)}><MoreHorizontal size={17} /></button></td></tr>)}</tbody></table>{routines.length === 0 && <div className="empty-state">Nenhuma rotina encontrada com esses filtros.</div>}</div>
             <Pagination page={page} pageCount={pageCount} total={routineTotal} onChange={setPage} />
           </section>
         </>}
@@ -360,6 +367,16 @@ function Brand({ light = false }: { light?: boolean }) { return <div className={
 
 function Login({ onSubmit, setupRequired, name, setName, login, setLogin, password, setPassword, error }: { onSubmit: (event: FormEvent<HTMLFormElement>) => void; setupRequired: boolean; name: string; setName: (value: string) => void; login: string; setLogin: (value: string) => void; password: string; setPassword: (value: string) => void; error: string }) {
   return <main className="login-shell"><section className="login-art"><Brand light /><div className="art-grid" /><div className="login-claim"><span className="eyebrow">CENTRO DE OPERAÇÕES</span><h1>Automação<br />sob controle.</h1><p>Visibilidade e governança para cada rotina crítica da operação.</p></div><div className="art-foot"><span>AGIS · AMBIENTE OPERACIONAL</span><span>01 / 03</span></div></section><section className="login-panel"><div className="login-top"><span>{setupRequired ? 'CONFIGURAÇÃO INICIAL' : 'ACESSO RESTRITO'}</span><span className="secure-label"><ShieldCheck size={14} /> CONEXÃO SEGURA</span></div><form className="login-form" onSubmit={onSubmit}><div className="login-heading"><span className="eyebrow">{setupRequired ? 'PRIMEIRO ACESSO' : 'BEM-VINDO DE VOLTA'}</span><h2>{setupRequired ? 'Criar conta aprovadora' : 'Entrar na plataforma'}</h2><p>{setupRequired ? 'Esta conta administrará os perfis e aprovações.' : 'Use suas credenciais para continuar.'}</p></div>{setupRequired && <label>Nome completo<input autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Seu nome" required /></label>}<label>Usuário<input autoComplete="username" value={login} onChange={(event) => setLogin(event.target.value)} placeholder="seu.login" required /></label><label>Senha<input type="password" autoComplete={setupRequired ? 'new-password' : 'current-password'} minLength={setupRequired ? 12 : undefined} value={password} onChange={(event) => setPassword(event.target.value)} placeholder={setupRequired ? 'Mínimo de 12 caracteres' : 'Senha'} required /></label>{error && <p className="form-error">{error}</p>}<button className="primary-button login-button">{setupRequired ? 'Criar aprovador' : 'Acessar'} <ArrowRight size={16} /></button></form><div className="login-footer"><span>© 2026 NEXO AUTOMAÇÃO</span><span>AGIS</span></div></section></main>
+}
+
+function SortHeader({ label, column, sort, direction, onSort }: { label: string; column: RoutineSort; sort: RoutineSort; direction: 'asc' | 'desc'; onSort: (column: RoutineSort) => void }) {
+  const active = sort === column
+  return <th aria-sort={active ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
+    <button type="button" className={`sort-header${active ? ' active' : ''}`} onClick={() => onSort(column)}>
+      {label}
+      {active && (direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
+    </button>
+  </th>
 }
 
 function Heading({ eyebrow, title, description, actions }: { eyebrow: string; title: string; description: string; actions?: React.ReactNode }) { return <div className="page-heading"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div><div className="heading-actions">{actions}</div></div> }
@@ -439,7 +456,15 @@ function MultiSelectFilter({ icon, label, allLabel, options, selected, onChange 
         : [...selected, option]
     onChange(next.length === options.length ? null : next)
   }
-  return <details className="multi-select-filter">
+  function closeSiblings(event: ToggleEvent<HTMLDetailsElement>) {
+    if (!event.currentTarget.open) return
+    const row = event.currentTarget.parentElement
+    if (!row) return
+    for (const details of row.querySelectorAll('details.multi-select-filter')) {
+      if (details !== event.currentTarget) details.removeAttribute('open')
+    }
+  }
+  return <details className="multi-select-filter" name="rotinas-filters" onToggle={closeSiblings}>
     <summary className="select-filter">{icon}<span>{summary}</span><ChevronDown size={13} /></summary>
     <div className="multi-select-menu">
       <button type="button" className="multi-select-all" onClick={() => onChange(selected === null ? [] : null)}>{selected === null ? 'Desmarcar todos' : 'Selecionar todos'}</button>

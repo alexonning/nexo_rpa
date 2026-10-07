@@ -10,7 +10,7 @@ import { z } from 'zod'
 import { pool } from './db.js'
 import { ensureBootstrapApprover, requireApprover, requireUser } from './auth.js'
 import { PostgresSessionStore } from './session-store.js'
-import { listColumnMetadata, listRoutineStatuses, listRoutines } from './routine-service.js'
+import { listColumnMetadata, listRoutineStatuses, listRoutines, routineSortColumns } from './routine-service.js'
 import { createRequestGroup, decideRequestGroup } from './request-service.js'
 
 const app = express()
@@ -100,7 +100,7 @@ app.get('/api/routines', requireUser, async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Banco não configurado' })
   const page = Math.max(1, Number(req.query.page) || 1)
   const sort = String(req.query.sort ?? 'executar_apos')
-  if (!['id_situacao', 'executar_apos'].includes(sort)) return res.status(400).json({ error: 'Ordenação inválida' })
+  if (!routineSortColumns.includes(sort as typeof routineSortColumns[number])) return res.status(400).json({ error: 'Ordenação inválida' })
   const readList = (value: unknown, provided: boolean) => {
     if (!provided) return undefined
     const raw = (Array.isArray(value) ? value : [value]).filter((item): item is string => typeof item === 'string')
@@ -125,7 +125,7 @@ app.get('/api/routines', requireUser, async (req, res) => {
     search: String(req.query.search ?? ''),
     statuses,
     automations,
-    orderBy: sort as 'id_situacao' | 'executar_apos',
+    orderBy: sort as typeof routineSortColumns[number],
     direction: req.query.direction === 'asc' ? 'asc' : 'desc',
   })
   res.json(result)

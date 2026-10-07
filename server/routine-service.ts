@@ -1,12 +1,15 @@
 import type { Pool, PoolClient } from 'pg'
 import { quoteIdentifier } from './db.js'
 
+export const routineSortColumns = ['routine_id', 'automation', 'status', 'id_situacao', 'agency', 'robot', 'tentativas', 'executar_apos', 'etapa_execucao'] as const
+export type RoutineSortColumn = typeof routineSortColumns[number]
+
 export type RoutineFilters = {
   page: number
   search?: string
   statuses?: string[]
   automations?: string[]
-  orderBy?: 'id_situacao' | 'executar_apos'
+  orderBy?: RoutineSortColumn
   direction?: 'asc' | 'desc'
 }
 
@@ -88,7 +91,7 @@ export async function listRoutines(pool: Pool, filters: RoutineFilters) {
   const union = sourceQueries.join('\nUNION ALL\n')
   const count = await pool.query<{ total: string }>(`SELECT COUNT(*)::text AS total FROM (${union}) routines ${where}`, values)
 
-  const sortColumn = filters.orderBy === 'id_situacao' ? 'id_situacao' : 'executar_apos'
+  const sortColumn = filters.orderBy && routineSortColumns.includes(filters.orderBy) ? filters.orderBy : 'executar_apos'
   const direction = filters.direction === 'asc' ? 'ASC' : 'DESC'
   const dataValues = [...values, 10, (filters.page - 1) * 10]
   const pageResult = await pool.query(
