@@ -237,9 +237,15 @@ export default function LiveWorkspace() {
     setPage(1)
     setSection('Rotinas')
   }
-  function openRequestFromRow(event: MouseEvent<HTMLDivElement>) {
+  function handleContentRowClick(event: MouseEvent<HTMLDivElement>) {
     const target = event.target as HTMLElement
-    if (target.closest('.approve-icon, .reject-icon')) return
+    if (section === 'Automações' || section === 'Robôs') {
+      if (target.closest('button')) return
+      const row = target.closest('tbody tr')
+      row?.querySelector<HTMLButtonElement>('button[title="Solicitar alteração"]')?.click()
+      return
+    }
+    if (section !== 'Solicitações' || target.closest('.approve-icon, .reject-icon')) return
     const row = target.closest('tbody tr')
     const body = row?.parentElement
     if (!row || !body) return
@@ -325,7 +331,7 @@ export default function LiveWorkspace() {
     </aside>
     <main className="main-area">
       <header className="topbar"><div className="breadcrumbs"><span>Operações</span><b>/</b><strong>{section}</strong></div><div className="top-actions"><span className="live-state"><i /> AO VIVO</span><button className="icon-button notification-button" title="Notificações"><Bell size={17} />{pendingCount > 0 && <i />}</button><span className="top-divider" /><button className="profile-button" onClick={() => navigate('Configurações')}><span className="avatar">{initials}</span><span><strong>{user.nome}</strong><small>{user.perfil === 'aprovador' ? 'Aprovador' : 'Visualização'}</small></span><ChevronDown size={14} /></button><button className="icon-button" title="Sair" onClick={async () => { await apiRequest('/auth/logout', { method: 'POST' }).catch(() => undefined); setUser(null); setSetupRequired(false) }}><LogOut size={16} /></button></div></header>
-      <div className="content-wrap" onClick={section === 'Solicitações' ? openRequestFromRow : undefined}>
+      <div className="content-wrap" onClick={handleContentRowClick}>
         {notice && <div className="toast"><Check size={15} />{notice}<button onClick={() => setNotice('')}><X size={14} /></button></div>}
         {section === 'Dashboard' && <Dashboard onOpen={navigate} onSelectRoutine={openRoutineFromDashboard} stats={dashboard} rows={recentRoutines} errorRows={errorRoutines} errorTotal={errorRoutineTotal} />}
         {section === 'Rotinas' && <>
@@ -423,21 +429,21 @@ function MetadataField({ metadata, value, disabled = false, onChange }: { metada
   return <label key={label}><span className="field-label-line"><span>{label}</span><small className="field-type">{type}{metadata?.character_maximum_length ? `(${metadata.character_maximum_length})` : ''}</small></span><input {...common} type={numeric ? 'number' : 'text'} step={numeric ? step : undefined} value={inputValue(value, metadata)} onChange={(event) => onChange(event.target.value === '' ? null : event.target.value)} /></label>
 }
 
-function MultiSelectFilter({ icon, label, allLabel, options, selected, onChange }: { icon: React.ReactNode; label: string; allLabel: string; options: string[]; selected: string[]; onChange: (values: string[]) => void }) {
-  const summary = selected.length === 0 ? allLabel : selected.length === 1 ? selected[0] : `${selected.length} ${label.toLowerCase()} selecionados`
+function MultiSelectFilter({ icon, label, allLabel, options, selected, onChange }: { icon: React.ReactNode; label: string; allLabel: string; options: string[]; selected: string[] | null; onChange: (values: string[] | null) => void }) {
+  const summary = selected === null ? allLabel : selected.length === 0 ? `Nenhum(a) ${label.toLowerCase()}` : selected.length === 1 ? selected[0] : `${selected.length} ${label.toLowerCase()} selecionados`
   function toggle(option: string) {
-    const next = selected.length === 0
+    const next = selected === null
       ? options.filter((item) => item !== option)
       : selected.includes(option)
         ? selected.filter((item) => item !== option)
         : [...selected, option]
-    onChange(next.length === options.length ? [] : next)
+    onChange(next.length === options.length ? null : next)
   }
   return <details className="multi-select-filter">
     <summary className="select-filter">{icon}<span>{summary}</span><ChevronDown size={13} /></summary>
     <div className="multi-select-menu">
-      <button type="button" className="multi-select-all" onClick={() => onChange([])}>Selecionar todos</button>
-      {options.map((option) => <label key={option} className="multi-select-option"><input type="checkbox" checked={selected.length === 0 || selected.includes(option)} onChange={() => toggle(option)} /><span>{option}</span></label>)}
+      <button type="button" className="multi-select-all" onClick={() => onChange(selected === null ? [] : null)}>{selected === null ? 'Desmarcar todos' : 'Selecionar todos'}</button>
+      {options.map((option) => <label key={option} className="multi-select-option"><input type="checkbox" checked={selected === null || selected.includes(option)} onChange={() => toggle(option)} /><span>{option}</span></label>)}
       {options.length === 0 && <span className="multi-select-empty">Nenhuma opção disponível</span>}
     </div>
   </details>

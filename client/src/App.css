@@ -87,6 +87,8 @@
 .search-field { flex: 1; max-width: 340px; }.search-field input { width: 100%; min-width: 0; border: 0; outline: 0; color: #364138; background: transparent; font-size: 10px; }.search-field input::placeholder { color: #a3aaa4; }
 .select-filter select { max-width: 185px; border: 0; outline: 0; color: #667168; background: white; font-size: 10px; cursor: pointer; }.filter-button { min-height: 33px; }
 .multi-select-filter { position: relative; flex: 0 0 auto; }
+.data-panel:has(.multi-select-filter) { overflow: visible; }
+.filters-row:has(.multi-select-filter) { position: relative; z-index: 6; }
 .multi-select-filter > summary { max-width: 220px; min-width: 155px; justify-content: flex-start; list-style: none; cursor: pointer; }
 .multi-select-filter > summary::-webkit-details-marker { display: none; }
 .multi-select-filter > summary span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -96,6 +98,7 @@
 .multi-select-option:hover { background: #f3f7f3; }
 .multi-select-option input { width: 13px; height: 13px; margin: 0; accent-color: #176b4c; }
 .multi-select-empty { display: block; padding: 11px 8px; color: #88938b; font-size: 10px; }
+.request-panel tbody tr, .entity-panel:has(button[title="Solicitar alteração"]) tbody tr { cursor: pointer; }
 .table-scroll { width: 100%; overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
 th { height: 34px; padding: 0 10px; border-top: 1px solid #eff1ef; border-bottom: 1px solid #eff1ef; color: #89938b; background: #fafbfa; font-size: 8px; font-weight: 700; letter-spacing: .55px; }
